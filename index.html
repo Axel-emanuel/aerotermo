@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#190B3A" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>AeroTermo — Escudos Térmicos</title>
+
+  <style>
+    :root {
+      --bg-main: #0F0724;
+      --bg-card: rgba(28, 15, 61, 0.86);
+      --bg-card-elev: rgba(44, 24, 92, 0.92);
+      --bg-input: rgba(16, 8, 38, 0.92);
+      --border: rgba(196, 165, 255, 0.22);
+      --text-main: #FAF5FF;
+      --text-muted: #C4B5FD;
+      --text-dim: #9A86C8;
+      --purple: #C084FC;
+      --purple-deep: #7C3AED;
+      --pink: #F472B6;
+      --cyan: #38BDF8;
+      --orange: #FB923C;
+      --orange-deep: #EA580C;
+      --red: #F87171;
+      --green: #4ADE80;
+      --amber: #FDE047;
+      --radius-lg: 18px;
+      --radius-md: 13px;
+      --radius-sm: 9px;
+      --nav-h: 68px;
+      --shadow: 0 14px 32px -8px rgba(6, 2, 18, 0.72);
+    }
+
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      min-height: 100%;
+      background: radial-gradient(circle at 20% 0%, #2B1259 0%, #140830 48%, #0B041B 100%);
+      background-attachment: fixed;
+      color: var(--text-main);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      line-height: 1.48;
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Fondo animado de estrellas blancas y de colores brillantes */
+    #starfield {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(circle at 14% 12%, rgba(192, 132, 252, 0.16), transparent 38%),
+        radial-gradient(circle at 86% 24%, rgba(244, 114, 182, 0.13), transparent 40%),
+        radial-gradient(circle at 50% 92%, rgba(56, 189, 248, 0.10), transparent 44%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .app-shell {
+      position: relative;
+      z-index: 1;
+      max-width: 720px;
+      margin: 0 auto;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      padding-bottom: calc(var(--nav-h) + env(safe-area-inset-bottom, 12px) + 18px);
+    }
+
+    /* Cabecera superior */
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 40;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 11px 14px;
+      background: rgba(20, 9, 48, 0.88);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .brand { display: flex; align-items: center; gap: 10px; min-width: 0; }
+
+    .brand-icon {
+      width: 38px;
+      height: 38px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, var(--purple-deep), var(--pink));
+      border: 1px solid rgba(216, 180, 254, 0.45);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      flex-shrink: 0;
+      box-shadow: 0 4px 16px rgba(168, 85, 247, 0.42);
+    }
+
+    .brand-text h1 { margin: 0; font-size: 1.06rem; font-weight: 800; letter-spacing: -0.02em; line-height: 1.15; }
+    .brand-text p { margin: 0; font-size: 0.72rem; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    .score-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      background: rgba(192, 132, 252, 0.16);
+      border: 1px solid rgba(192, 132, 252, 0.42);
+      color: var(--amber);
+      padding: 6px 11px;
+      border-radius: 999px;
+      font-size: 0.77rem;
+      font-weight: 800;
+      flex-shrink: 0;
+      font-variant-numeric: tabular-nums;
+    }
+
+    main { padding: 14px 13px 6px; flex: 1; }
+    .tab-view { display: none; animation: fadeUp 0.22s ease; }
+    .tab-view.active { display: block; }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(7px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .card {
+      background: var(--bg-card);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 14px;
+      margin-bottom: 12px;
+      box-shadow: var(--shadow);
+    }
+
+    .card-header { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
+    .card-title { margin: 0; font-size: 0.96rem; font-weight: 800; display: flex; align-items: center; gap: 6px; letter-spacing: -0.01em; }
+    .subtitle { font-size: 0.81rem; color: var(--text-muted); margin: 0 0 10px; }
+
+    .badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 9px; border-radius: 999px; font-size: 0.71rem; font-weight: 700; white-space: nowrap; }
+    .badge-purple { background: rgba(192, 132, 252, 0.18); color: #E9D5FF; border: 1px solid rgba(192, 132, 252, 0.42); }
+    .badge-cyan   { background: rgba(56, 189, 248, 0.16); color: #7DD3FC; border: 1px solid rgba(56, 189, 248, 0.36); }
+    .badge-orange { background: rgba(251, 146, 60, 0.18); color: #FED7AA; border: 1px solid rgba(251, 146, 60, 0.42); }
+    .badge-green  { background: rgba(74, 222, 128, 0.16); color: #BBF7D0; border: 1px solid rgba(74, 222, 128, 0.38); }
+    .badge-amber  { background: rgba(253, 224, 71, 0.16); color: var(--amber); border: 1px solid rgba(253, 224, 71, 0.38); }
+
+    /* Botones y selectores */
+    .metal-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+    @media (min-width: 520px) { .metal-grid { grid-template-columns: repeat(4, 1fr); } }
+
+    .metal-btn {
+      background: var(--bg-card-elev);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 10px 9px;
+      color: var(--text-main);
+      text-align: left;
+      cursor: pointer;
+      transition: transform 0.12s ease, border-color 0.15s ease, background 0.15s ease;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      font-family: inherit;
+    }
+
+    .metal-btn:active { transform: scale(0.97); }
+    .metal-btn:disabled { opacity: 0.48; cursor: not-allowed; }
+    .metal-btn.selected {
+      border-color: var(--purple);
+      background: rgba(168, 85, 247, 0.24);
+      box-shadow: 0 0 0 1px rgba(216, 180, 254, 0.42) inset, 0 0 14px rgba(168, 85, 247, 0.28);
+    }
+    .metal-btn .m-tag { font-size: 0.66rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.03em; }
+    .metal-btn .m-name { font-size: 0.85rem; font-weight: 800; line-height: 1.2; }
+    .metal-btn .m-meta { font-size: 0.69rem; color: var(--text-muted); }
+
+    .preset-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 12px; }
+    @media (min-width: 560px) { .preset-grid { grid-template-columns: repeat(4, 1fr); } }
+
+    .preset-btn {
+      background: var(--bg-input);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 9px 7px;
+      color: var(--text-main);
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.15s ease;
+      font-family: inherit;
+    }
+    .preset-btn strong { display: block; font-size: 0.77rem; margin-bottom: 2px; }
+    .preset-btn span { display: block; font-size: 0.67rem; color: var(--text-muted); }
+    .preset-btn.active { border-color: var(--pink); background: rgba(244, 114, 182, 0.18); box-shadow: 0 0 0 1px rgba(244, 114, 182, 0.35) inset; }
+
+    .control-row { display: flex; flex-direction: column; gap: 10px; }
+    .slider-label { display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; margin-bottom: 5px; }
+    .slider-label span:first-child { color: var(--text-muted); font-weight: 600; }
+    .slider-val { font-weight: 800; color: var(--amber); font-variant-numeric: tabular-nums; }
+
+    input[type="range"] { -webkit-appearance: none; appearance: none; width: 100%; height: 8px; border-radius: 999px; background: #351D69; outline: none; cursor: pointer; }
+    input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 24px; height: 24px; border-radius: 50%; background: linear-gradient(135deg, #E879F9, #C084FC); border: 3px solid #120729; box-shadow: 0 2px 12px rgba(216, 180, 254, 0.65); cursor: pointer; }
+    input[type="range"]::-moz-range-thumb { width: 24px; height: 24px; border-radius: 50%; background: linear-gradient(135deg, #E879F9, #C084FC); border: 3px solid #120729; box-shadow: 0 2px 12px rgba(216, 180, 254, 0.65); cursor: pointer; }
+
+    .speed-group { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 2px; }
+    .speed-pills { display: inline-grid; grid-template-columns: repeat(3, 1fr); gap: 5px; background: var(--bg-input); padding: 4px; border-radius: 10px; border: 1px solid var(--border); }
+    .speed-pill { padding: 6px 12px; border: none; border-radius: 7px; background: transparent; color: var(--text-muted); font-size: 0.77rem; font-weight: 800; cursor: pointer; font-family: inherit; }
+    .speed-pill.active { background: var(--purple); color: #14072E; }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 11px 14px;
+      border-radius: var(--radius-md);
+      border: 1px solid transparent;
+      font-size: 0.86rem;
+      font-weight: 800;
+      cursor: pointer;
+      transition: transform 0.12s ease, opacity 0.15s ease;
+      font-family: inherit;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    .btn:active { transform: scale(0.97); }
+    .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+    .btn-primary { background: linear-gradient(135deg, #7C3AED, #C084FC); color: #FFFFFF; flex: 1.4; }
+    .btn-orange { background: linear-gradient(135deg, #EA580C, #FB923C); color: #FFFFFF; flex: 1.5; }
+    .btn-secondary { background: var(--bg-card-elev); border-color: var(--border); color: var(--text-main); flex: 1; }
+    .btn-outline-purple { background: rgba(192, 132, 252, 0.14); border-color: rgba(192, 132, 252, 0.42); color: #E9D5FF; }
+    .btn-sm { padding: 7px 11px; font-size: 0.75rem; border-radius: var(--radius-sm); flex: none; }
+    .controls-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+
+    /* Canvases y fases */
+    .canvas-box { position: relative; width: 100%; border-radius: var(--radius-md); overflow: hidden; background: #0A0418; border: 1px solid var(--border); }
+    #simCanvas { display: block; width: 100%; height: 220px; }
+    #chartCanvas { display: block; width: 100%; height: 185px; }
+    #compareCanvas { display: block; width: 100%; height: 215px; }
+    #arcadeCanvas { display: block; width: 100%; height: 265px; touch-action: none; }
+
+    .segmented { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; background: var(--bg-input); padding: 4px; border-radius: var(--radius-md); border: 1px solid var(--border); margin-bottom: 12px; }
+    .seg-btn { padding: 9px 6px; border: none; border-radius: 9px; background: transparent; color: var(--text-muted); font-size: 0.79rem; font-weight: 800; cursor: pointer; font-family: inherit; }
+    .seg-btn.active { background: var(--bg-card-elev); color: var(--amber); box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35); }
+    .phase-panel { display: none; }
+    .phase-panel.active { display: block; animation: fadeUp 0.18s ease; }
+
+    .metrics-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 10px; }
+    .metric-box { background: var(--bg-input); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 10px; }
+    .metric-box .label { font-size: 0.71rem; color: var(--text-muted); margin-bottom: 2px; }
+    .metric-box .value { font-size: 1.03rem; font-weight: 800; font-variant-numeric: tabular-nums; }
+    .metric-box .sub { font-size: 0.69rem; color: var(--text-dim); margin-top: 2px; }
+
+    .bar-track { width: 100%; height: 10px; background: #27154E; border-radius: 999px; overflow: hidden; margin: 6px 0; }
+    .bar-fill { height: 100%; border-radius: 999px; transition: width 0.18s ease, background-color 0.2s ease; }
+
+    .status-banner { border-radius: var(--radius-md); padding: 12px; margin-bottom: 10px; border: 1px solid var(--border); display: flex; align-items: flex-start; gap: 10px; }
+    .status-banner.safe   { background: rgba(74, 222, 128, 0.12); border-color: rgba(74, 222, 128, 0.42); }
+    .status-banner.warn   { background: rgba(251, 146, 60, 0.15); border-color: rgba(251, 146, 60, 0.45); }
+    .status-banner.danger { background: rgba(248, 113, 113, 0.18); border-color: rgba(248, 113, 113, 0.52); }
+    .status-banner .icon { font-size: 1.45rem; line-height: 1; flex-shrink: 0; }
+    .status-banner h4 { margin: 0 0 3px; font-size: 0.92rem; }
+    .status-banner p { margin: 0; font-size: 0.8rem; color: #F3E8FF; }
+
+    .diag-box { background: var(--bg-input); border-left: 4px solid var(--purple); border-radius: 0 var(--radius-md) var(--radius-md) 0; padding: 10px 12px; font-size: 0.82rem; margin-top: 8px; }
+    .diag-box.warn { border-left-color: var(--orange); }
+    .diag-box.crit { border-left-color: var(--red); }
+    .diag-box.ok   { border-left-color: var(--green); }
+
+    /* Comparador y Fichas Técnicas */
+    .vs-selectors { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 8px; margin-bottom: 12px; }
+    .vs-select { width: 100%; background: var(--bg-input); color: var(--text-main); border: 1.5px solid var(--border); border-radius: var(--radius-sm); padding: 9px 10px; font-size: 0.82rem; font-weight: 700; font-family: inherit; outline: none; }
+    .vs-select:focus { border-color: var(--purple); }
+    .vs-badge { font-size: 0.78rem; font-weight: 900; color: var(--amber); background: rgba(253, 224, 71, 0.15); border: 1px solid rgba(253, 224, 71, 0.36); border-radius: 999px; padding: 4px 9px; }
+
+    .dual-bar-row { margin-bottom: 10px; background: var(--bg-input); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 8px 10px; }
+    .dual-bar-title { font-size: 0.75rem; color: var(--text-muted); font-weight: 700; margin-bottom: 6px; }
+    .dual-bar-line { display: grid; grid-template-columns: 76px 1fr 82px; align-items: center; gap: 8px; font-size: 0.75rem; margin-bottom: 4px; }
+    .dual-bar-line:last-child { margin-bottom: 0; }
+    .dual-bar-line .val { text-align: right; font-weight: 800; font-variant-numeric: tabular-nums; }
+
+    .spec-table { width: 100%; border-collapse: collapse; font-size: 0.79rem; margin: 6px 0 8px; }
+    .spec-table td { padding: 6px 4px; border-bottom: 1px solid rgba(196, 165, 255, 0.12); vertical-align: top; }
+    .spec-table td:first-child { color: var(--text-muted); width: 48%; }
+    .spec-table td:last-child { text-align: right; font-weight: 700; color: var(--text-main); }
+
+    .sheet-pill-row { display: flex; flex-wrap: wrap; gap: 6px; }
+    .sheet-tab-btn { flex: 1 1 44%; padding: 9px 8px; border-radius: var(--radius-sm); border: 1.5px solid var(--border); background: var(--bg-input); color: var(--text-muted); font-size: 0.78rem; font-weight: 800; cursor: pointer; font-family: inherit; }
+    .sheet-tab-btn.active { border-color: var(--purple); background: rgba(168, 85, 247, 0.24); color: var(--text-main); }
+
+    .comp-box { background: var(--bg-input); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 9px 11px; font-size: 0.77rem; color: #E9D5FF; margin-top: 8px; }
+    .pros-cons { display: grid; grid-template-columns: 1fr; gap: 8px; margin-top: 8px; font-size: 0.78rem; }
+    @media (min-width: 520px) { .pros-cons { grid-template-columns: 1fr 1fr; } }
+    .pc-box { background: var(--bg-input); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 8px 10px; }
+
+    /* Créditos discretos en Fichas Técnicas */
+    .credits-subtle {
+      margin-top: 14px;
+      padding: 12px 10px 6px;
+      border-top: 1px solid rgba(196, 165, 255, 0.14);
+      text-align: center;
+      font-size: 0.72rem;
+      color: var(--text-dim);
+      line-height: 1.65;
+    }
+    .credits-subtle .team-names { margin-top: 4px; color: rgba(196, 181, 253, 0.76); font-weight: 600; }
+
+    /* Minijuegos */
+    .game-menu-grid { display: grid; grid-template-columns: 1fr; gap: 10px; }
+    .game-card-btn {
+      background: linear-gradient(145deg, rgba(33, 17, 72, 0.92), rgba(50, 26, 105, 0.92));
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 14px;
+      color: var(--text-main);
+      text-align: left;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 13px;
+      transition: transform 0.14s ease, border-color 0.15s ease;
+      font-family: inherit;
+    }
+    .game-card-btn:hover { border-color: var(--purple); }
+    .game-card-btn:active { transform: scale(0.98); }
+    .game-icon { width: 52px; height: 52px; border-radius: 15px; display: flex; align-items: center; justify-content: center; font-size: 26px; flex-shrink: 0; }
+    .game-panel { display: none; }
+    .game-panel.active { display: block; animation: fadeUp 0.2s ease; }
+
+    .mission-tabs { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; margin-bottom: 12px; }
+    .mission-pill { padding: 8px 2px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--bg-input); color: var(--text-muted); font-size: 0.72rem; font-weight: 800; cursor: pointer; text-align: center; font-family: inherit; }
+    .mission-pill.active { border-color: var(--amber); color: var(--amber); background: rgba(253, 224, 71, 0.14); }
+
+    .cool-btn {
+      width: 100%;
+      padding: 16px 14px;
+      border-radius: 16px;
+      border: 2px solid var(--cyan);
+      background: linear-gradient(135deg, rgba(14, 116, 144, 0.42), rgba(56, 189, 248, 0.24));
+      color: #E0F2FE;
+      font-size: 0.94rem;
+      font-weight: 900;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      touch-action: none;
+      user-select: none;
+      -webkit-user-select: none;
+      transition: transform 0.08s ease, box-shadow 0.12s ease, background 0.12s ease;
+      font-family: inherit;
+    }
+    .cool-btn.cooling { transform: scale(0.98); background: linear-gradient(135deg, #0284C7, #38BDF8); color: #061121; box-shadow: 0 0 24px rgba(56, 189, 248, 0.65); }
+
+    .quiz-option { width: 100%; text-align: left; padding: 12px 13px; margin-bottom: 8px; border-radius: var(--radius-md); border: 1.5px solid var(--border); background: var(--bg-card-elev); color: var(--text-main); font-size: 0.85rem; font-weight: 600; cursor: pointer; font-family: inherit; }
+    .quiz-option:hover:not(:disabled) { border-color: var(--purple); }
+    .quiz-option.correct { background: rgba(74, 222, 128, 0.22); border-color: var(--green); color: #DCFCE7; }
+    .quiz-option.wrong   { background: rgba(248, 113, 113, 0.22); border-color: var(--red); color: #FEE2E2; }
+
+    /* Modal "¿Cómo funciona?" */
+    .modal-backdrop { position: fixed; inset: 0; z-index: 80; background: rgba(8, 3, 22, 0.82); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); display: none; align-items: center; justify-content: center; padding: 16px; }
+    .modal-backdrop.open { display: flex; animation: fadeUp 0.18s ease; }
+    .modal-card { width: 100%; max-width: 480px; max-height: 85vh; overflow-y: auto; background: #1B0E3B; border: 1px solid rgba(192, 132, 252, 0.45); border-radius: 20px; padding: 16px; box-shadow: 0 20px 50px rgba(0, 0, 0, 0.72); }
+    .eq-item { background: var(--bg-input); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 10px 12px; margin-bottom: 9px; font-size: 0.81rem; }
+    .eq-math { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; color: var(--amber); font-size: 0.86rem; font-weight: 800; margin: 4px 0; }
+
+    /* Barra inferior fija (4 pestañas) */
+    .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; z-index: 50; background: rgba(18, 8, 42, 0.95); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border-top: 1px solid var(--border); padding-bottom: env(safe-area-inset-bottom, 0px); }
+    .bottom-nav-inner { max-width: 720px; margin: 0 auto; height: var(--nav-h); display: grid; grid-template-columns: repeat(4, 1fr); }
+    .nav-btn { background: transparent; border: none; color: var(--text-muted); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; cursor: pointer; font-family: inherit; font-size: 0.71rem; font-weight: 800; position: relative; }
+    .nav-btn .nav-ico { font-size: 1.25rem; line-height: 1; }
+    .nav-btn.active { color: var(--amber); }
+    .nav-btn.active::before { content: ""; position: absolute; top: 0; left: 20%; right: 20%; height: 3px; border-radius: 0 0 4px 4px; background: linear-gradient(90deg, var(--purple), var(--pink)); }
+
+    .toast { position: fixed; top: 72px; left: 50%; transform: translateX(-50%) translateY(-16px); background: #2A1459; border: 1px solid var(--purple); color: #FFFFFF; padding: 10px 16px; border-radius: 999px; font-size: 0.81rem; font-weight: 700; box-shadow: 0 12px 30px rgba(0, 0, 0, 0.6); opacity: 0; pointer-events: none; transition: all 0.24s ease; z-index: 95; max-width: 92vw; text-align: center; }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  </style>
+</head>
+<body>
+  <canvas id="starfield" aria-hidden="true"></canvas>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <!-- MODAL EXPLICACIÓN SENCILLA -->
+  <div id="formulaModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="formulaModalTitle">
+    <div class="modal-card">
+      <div class="card-header" style="margin-bottom:8px;">
+        <h3 id="formulaModalTitle" class="card-title">💡 ¿Cómo calcula el calor esta app?</h3>
+        <button id="btnCloseFormula" class="btn btn-secondary btn-sm" type="button">✕ Cerrar</button>
+      </div>
+      <p class="subtitle">Imagina que cortamos la placa de metal en <strong>10 rebanadas delgadas</strong>. Cada fracción de segundo la app calcula cuánto calor entra, cuánto cruza hacia adentro y cuánto escapa al exterior:</p>
+      <div class="eq-item">
+        <strong>1. Paso del calor hacia la cabina (Conducción)</strong>
+        <div class="eq-math">q = -k · (ΔT / Δx)</div>
+        <div>Si el número <em>k</em> es bajo (como en el Titanio), el calor tarda mucho en pasar y protege mejor a los astronautas.</div>
+      </div>
+      <div class="eq-item">
+        <strong>2. Qué tan rápido sube la temperatura</strong>
+        <div class="eq-math">ΔT = Calor neto / (peso × calor específico)</div>
+        <div>Entre más grueso sea el escudo y más calor pueda absorber (<em>cₚ</em>), más despacio se calienta.</div>
+      </div>
+      <div class="eq-item">
+        <strong>3. Calor que rebota al espacio (Radiación)</strong>
+        <div class="eq-math">q_rad = ε · σ · (T⁴ - T_amb⁴)</div>
+        <div>Cuando un metal se pone al rojo vivo, suelta parte de su calor brillando. Al oxidarse un poco, suelta todavía más calor.</div>
+      </div>
+      <div class="eq-item" style="margin-bottom:0;">
+        <strong>4. Cuánto se estira el metal (Dilatación)</strong>
+        <div class="eq-math">ΔL = α · L₀ · ΔT</div>
+        <div>Al calentarse, todos los metales crecen un poco. Si crece demasiado, las piezas de la nave se pueden doblar.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-icon" aria-hidden="true">🚀</div>
+        <div class="brand-text">
+          <h1>AeroTermo</h1>
+          <p>Escudos térmicos espaciales</p>
+        </div>
+      </div>
+      <div class="score-pill" title="Puntos acumulados en Juegos">
+        <span>⭐</span>
+        <span id="globalScoreDisplay">0 pts</span>
+      </div>
+    </header>
+
+    <main>
+      <!-- PESTAÑA 1: SIMULADOR -->
+      <section id="tab-sim" class="tab-view active" aria-label="Simulador Térmico">
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">1. Elige un metal para el escudo</h2>
+            <span id="simMetalBadge" class="badge badge-purple">Aluminio 6061-T6</span>
+          </div>
+          <div id="simMetalGrid" class="metal-grid"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">2. Qué tan fuerte es el calor y el grosor</h2>
+            <span id="simMassBadge" class="badge badge-orange">Peso: 54.0 kg/m²</span>
+          </div>
+          <div class="preset-grid" id="presetGrid">
+            <button class="preset-btn" data-preset="supersonic" type="button"><strong>✈️ Muy Rápido</strong><span>Suave · 45 s</span></button>
+            <button class="preset-btn active" data-preset="suborbital" type="button"><strong>🚀 Cohete Corto</strong><span>Medio · 60 s</span></button>
+            <button class="preset-btn" data-preset="leo" type="button"><strong>🛰️ Desde Órbita</strong><span>Fuerte · 75 s</span></button>
+            <button class="preset-btn" data-preset="lunar" type="button"><strong>🌙 Desde la Luna</strong><span>Extremo · 90 s</span></button>
+          </div>
+          <div class="control-row">
+            <div>
+              <div class="slider-label">
+                <span>Grosor de la placa de metal</span>
+                <span class="slider-val" id="valThick">20 mm</span>
+              </div>
+              <input type="range" id="sliderThick" min="5" max="50" step="1" value="20" />
+            </div>
+            <div class="speed-group">
+              <span style="font-size:0.8rem;color:var(--text-muted);font-weight:600;">Velocidad de la prueba</span>
+              <div class="speed-pills" id="speedPills">
+                <button class="speed-pill active" data-speed="1" type="button">1x</button>
+                <button class="speed-pill" data-speed="2" type="button">2x</button>
+                <button class="speed-pill" data-speed="4" type="button">4x</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">🔥 Así entra el calor al escudo</h2>
+            <span id="simClockBadge" class="badge badge-cyan">0.0 / 60 s</span>
+          </div>
+          <div class="canvas-box"><canvas id="simCanvas"></canvas></div>
+          <div class="controls-row">
+            <button id="btnPlayPause" class="btn btn-orange" type="button">▶ Iniciar</button>
+            <button id="btnReset" class="btn btn-secondary" type="button">↺ Reiniciar</button>
+            <button id="btnOpenFormula" class="btn btn-outline-purple btn-sm" type="button">💡 ¿Cómo funciona?</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="segmented" role="tablist">
+            <button class="seg-btn active" data-phase="antes" type="button">ANTES (Frío)</button>
+            <button class="seg-btn" data-phase="durante" type="button">DURANTE</button>
+            <button class="seg-btn" data-phase="despues" type="button">DESPUÉS</button>
+          </div>
+
+          <div id="phase-antes" class="phase-panel active">
+            <p id="antesResumen" class="subtitle" style="color:#F3E8FF;font-size:0.84rem;"></p>
+            <div class="metrics-grid" id="antesGrid"></div>
+            <div style="font-size:0.78rem;color:var(--text-muted);background:var(--bg-input);padding:9px 11px;border-radius:10px;border:1px solid var(--border);">
+              <strong style="color:var(--amber);">¿Dónde se usa en la vida real?</strong> <span id="antesApps"></span>
+            </div>
+          </div>
+
+          <div id="phase-durante" class="phase-panel">
+            <div class="metrics-grid">
+              <div class="metric-box">
+                <div class="label">Afuera (frente al fuego)</div>
+                <div class="value" id="liveText" style="color:var(--orange)">24 °C</div>
+                <div class="sub" id="liveSolidusRef">Se derrite a: 582 °C</div>
+              </div>
+              <div class="metric-box">
+                <div class="label">Adentro (cabina)</div>
+                <div class="value" id="liveTint" style="color:var(--cyan)">24 °C</div>
+                <div class="sub">Máximo seguro: 150 °C</div>
+              </div>
+              <div class="metric-box">
+                <div class="label">Cuánto se estiró</div>
+                <div class="value" id="liveDilat">+0.00 mm/m</div>
+                <div class="sub" id="liveTavg">Promedio: 24 °C</div>
+              </div>
+              <div class="metric-box">
+                <div class="label">Calor que entra / rebota</div>
+                <div class="value" id="liveFluxPair">0 / 0 kW/m²</div>
+                <div class="sub" id="liveEmissivity">Brillo térmico ε: 0.20</div>
+              </div>
+            </div>
+            <div class="metric-box" style="margin-bottom:10px;">
+              <div style="display:flex;justify-content:space-between;font-size:0.78rem;font-weight:800;">
+                <span>Fuerza que le queda al metal en caliente</span>
+                <span id="liveYieldTxt" style="color:var(--green)">276 MPa (100%)</span>
+              </div>
+              <div class="bar-track"><div id="liveYieldBar" class="bar-fill" style="width:100%;background:var(--green);"></div></div>
+              <div class="sub">Cuando un metal se calienta demasiado se "ablanda", igual que una vela cerca del fuego.</div>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;font-size:0.74rem;color:var(--text-muted);margin-bottom:5px;flex-wrap:wrap;gap:6px;">
+              <strong style="color:var(--text-main);">Gráfica en vivo</strong>
+              <span><span style="color:var(--orange)">●</span> Afuera &nbsp; <span style="color:var(--cyan)">●</span> Cabina &nbsp; <span style="color:var(--green)">●</span> Fuerza %</span>
+            </div>
+            <div class="canvas-box"><canvas id="chartCanvas"></canvas></div>
+          </div>
+
+          <div id="phase-despues" class="phase-panel">
+            <div id="despuesBanner" class="status-banner safe">
+              <div class="icon">🛰️</div>
+              <div><h4>Listo para probar</h4><p>Presiona <strong>▶ Iniciar</strong> para ver si los astronautas sobreviven y cómo queda el metal al enfriarse.</p></div>
+            </div>
+            <div class="metrics-grid">
+              <div class="metric-box"><div class="label">Calor máximo afuera</div><div class="value" id="postTmax">24 °C</div><div class="sub" id="postMeltStatus">No se derritió</div></div>
+              <div class="metric-box"><div class="label">Calor máximo en cabina</div><div class="value" id="postTintMax">24 °C</div><div class="sub">Debe quedar ≤ 150 °C</div></div>
+              <div class="metric-box"><div class="label">Fuerza al enfriarse</div><div class="value" id="postResidual">100%</div><div class="sub" id="postResidualMpa">276 MPa</div></div>
+              <div class="metric-box"><div class="label">Daño visible</div><div class="value" id="postWear" style="font-size:0.9rem;">Ninguno</div><div class="sub" id="postMass">Peso: 54.0 kg/m²</div></div>
+            </div>
+            <div id="despuesDiagBox" class="diag-box ok"><strong>¿Cómo quedó el metal?</strong> Todavía no ha pasado por el fuego; está como nuevo.</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- PESTAÑA 2: COMPARAR -->
+      <section id="tab-compare" class="tab-view" aria-label="Comparador de Metales">
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">⚔️ Comparar dos metales</h2>
+            <span class="badge badge-purple">Fuerza vs. Calor</span>
+          </div>
+          <p class="subtitle">Elige dos metales para ver cuál pesa menos, cuál frena mejor el calor y cuál aguanta más fuerza cuando está hirviendo.</p>
+          <div class="vs-selectors">
+            <select id="vsMetalA" class="vs-select" aria-label="Primer metal"></select>
+            <span class="vs-badge">VS</span>
+            <select id="vsMetalB" class="vs-select" aria-label="Segundo metal"></select>
+          </div>
+          <div class="canvas-box" style="margin-bottom:12px;"><canvas id="compareCanvas"></canvas></div>
+          <div id="vsBarsContainer"></div>
+        </div>
+
+        <div class="card">
+          <h3 class="card-title" style="margin-bottom:8px;">✨ Resumen rápido (para entenderlo en 10 s)</h3>
+          <div id="quickSummaryList" style="display:grid;gap:8px;"></div>
+        </div>
+      </section>
+
+      <!-- PESTAÑA 3: MINIJUEGOS -->
+      <section id="tab-games" class="tab-view" aria-label="Minijuegos">
+        <div id="gamesMenu">
+          <div class="card">
+            <h2 class="card-title">🎮 Minijuegos de Habilidad</h2>
+            <p class="subtitle">Modo reto activado: menos margen de error, olas de fuego más rápidas y misiones exigentes. Tus récords se guardan solos.</p>
+            <div class="game-menu-grid">
+              <button class="game-card-btn" data-open-game="game1" type="button">
+                <div class="game-icon" style="background:rgba(56,189,248,0.18);border:1px solid rgba(56,189,248,0.42);">🚀</div>
+                <div style="flex:1;">
+                  <div style="display:flex;justify-content:space-between;align-items:center;gap:6px;">
+                    <strong style="font-size:0.95rem;">Salva la Cápsula</strong>
+                    <span class="badge badge-cyan" id="badgeBestG1">0 / 15 ★</span>
+                  </div>
+                  <span style="font-size:0.78rem;color:var(--text-muted);display:block;margin-top:3px;">5 misiones difíciles con peso estricto y margen pequeño. Un error en el grosor o el metal y la misión falla.</span>
+                </div>
+              </button>
+
+              <button class="game-card-btn" data-open-game="game2" type="button">
+                <div class="game-icon" style="background:rgba(251,146,60,0.18);border:1px solid rgba(251,146,60,0.42);">🔥</div>
+                <div style="flex:1;">
+                  <div style="display:flex;justify-content:space-between;align-items:center;gap:6px;">
+                    <strong style="font-size:0.95rem;">Escudo al Límite (Difícil)</strong>
+                    <span class="badge badge-orange" id="badgeBest
